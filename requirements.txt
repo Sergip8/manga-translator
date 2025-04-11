@@ -12,3 +12,4 @@ uvicorn
 logging
 fastapi
 dotenv
+python-multipart
