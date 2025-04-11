@@ -4,7 +4,7 @@ import logging
 from fastapi import FastAPI, File, UploadFile
 from PIL import Image
 
-from app.traslate_manga_image import MangaTranslator
+from traslate_manga_image import MangaTranslator
 from dotenv import load_dotenv
 load_dotenv()  
 
