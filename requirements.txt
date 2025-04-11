@@ -11,3 +11,4 @@ deepl
 uvicorn
 logging
 fastapi
+dotenv
