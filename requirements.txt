@@ -10,3 +10,4 @@ manga_ocr
 deepl
 uvicorn
 logging
+fastapi
