@@ -1,5 +1,4 @@
 import os
-from transformers import logging
 import numpy as np
 from transformers import VisionEncoderDecoderModel, TrOCRProcessor, RTDetrV2ForObjectDetection, RTDetrImageProcessor
 import torch
@@ -159,7 +158,7 @@ class MangaTranslator:
         draw = ImageDraw.Draw(result_img)
         
         # Initialize translator
-        
+        print(f"Translating to {target_lang}...")
         
         translations = []
         
