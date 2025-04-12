@@ -6,7 +6,6 @@ pillow
 numpy
 transformers
 torch
-manga_ocr
 deepl
 uvicorn
 logging

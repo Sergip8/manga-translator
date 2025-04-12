@@ -8,8 +8,8 @@ from app.traslate_manga_image import MangaTranslator
 from dotenv import load_dotenv
 load_dotenv()  
 
-logging.getLogger('torch').setLevel(logging.WARNING)
-logging.getLogger('PIL').setLevel(logging.WARNING)  
+logging.getLogger('torch').setLevel(logging.INFO)
+logging.getLogger('PIL').setLevel(logging.INFO)  
 
 app = FastAPI()
 

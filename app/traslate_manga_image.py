@@ -1,23 +1,26 @@
 import os
 from transformers import logging
 import numpy as np
-from transformers import AutoProcessor, AutoModelForObjectDetection
+from transformers import VisionEncoderDecoderModel, TrOCRProcessor, RTDetrV2ForObjectDetection, RTDetrImageProcessor
 import torch
 from PIL import Image, ImageDraw, ImageFont
-from manga_ocr import MangaOcr
 import deepl
+
+BUBBLE_MODEL = "ogkalu/comic-text-and-bubble-detector"
+EXTRACT_MODEL = "kha-white/manga-ocr-base"
 
 class MangaTranslator:
     def __init__(self):
         # Initialize Manga OCR
-        print("Initializing Manga OCR (this may take a moment)...")
-        self.mocr = MangaOcr()
-        self.processor = AutoProcessor.from_pretrained("ogkalu/comic-text-and-bubble-detector", trust_remote_code=True)
-        self.model = AutoModelForObjectDetection.from_pretrained("ogkalu/comic-text-and-bubble-detector", trust_remote_code=True)
-        logging.set_verbosity_error() 
+      
+        #self.mocr = MangaOcr(force_cpu=True)
+        self.bubble_processor = RTDetrImageProcessor.from_pretrained(BUBBLE_MODEL, trust_remote_code=True)
+        self.bubble_model = RTDetrV2ForObjectDetection.from_pretrained(BUBBLE_MODEL, trust_remote_code=True)
+        self.traslate_processor = TrOCRProcessor.from_pretrained(EXTRACT_MODEL, trust_remote_code=True)
+        self.traslate_model = VisionEncoderDecoderModel.from_pretrained(EXTRACT_MODEL, trust_remote_code=True)
         # Move model to GPU if available
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model.to(self.device)
+        self.bubble_model.to(self.device)
         self.translator = deepl.Translator(os.getenv('DEEPL_API_KEY'))
         
         # Font settings for translated text
@@ -68,8 +71,10 @@ class MangaTranslator:
         image = image.convert("RGB")
 
         # Preprocess image
-        inputs = self.processor(images=image, return_tensors="pt")
+        inputs = self.bubble_processor(images=image, return_tensors="pt")
+        # generated_ids = self.traslate_model.generate(inputs)
         
+        # print(generated_ids)
         # Move inputs to the same device as model
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
@@ -77,14 +82,14 @@ class MangaTranslator:
         if hasattr(torch.cuda, 'amp') and self.device.type == 'cuda':
             with torch.cuda.amp.autocast():
                 with torch.inference_mode():
-                    outputs = self.model(**inputs)
+                    outputs = self.bubble_model(**inputs)
         else:
             with torch.inference_mode():
-                outputs = self.model(**inputs)
+                outputs = self.bubble_model(**inputs)
 
         # Process results
         target_sizes = torch.tensor([image.size[::-1]]).to(self.device)  # (height, width)
-        results = self.processor.post_process_object_detection(outputs, threshold=0.5, target_sizes=target_sizes)[0]
+        results = self.bubble_processor.post_process_object_detection(outputs, threshold=0.5, target_sizes=target_sizes)[0]
         
         # Move results back to CPU for further processing
         results = {k: v.cpu() for k, v in results.items()}
@@ -168,7 +173,10 @@ class MangaTranslator:
             
             try:
                 # Extract text using Manga OCR
-                text = self.mocr(region_img)
+                pixel_values = self.traslate_processor(images=region_img, return_tensors="pt").pixel_values
+                generated_ids = self.traslate_model.generate(pixel_values)
+                text = self.traslate_processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+                #text = self.mocr(region_img)
                 
                 if not text.strip().startswith("．") and len(text.strip()) >= 3 and w*h < 4000*len(text.strip()):
                     # Translate the text using deep_translator
@@ -323,8 +331,6 @@ class MangaTranslator:
         
         # Convert boxes from [x1, y1, x2, y2] to (x, y, w, h) format
         boxes = self.convert_to_xywh(regions['boxes'])
-    
-
         return self.recognize_and_translate(image, boxes, target_lang)
         
         
