@@ -13,3 +13,4 @@ fastapi
 dotenv
 python-multipart
 protobuf
+fugashi
