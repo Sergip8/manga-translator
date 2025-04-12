@@ -19,7 +19,7 @@ class MangaTranslator:
         self.traslate_processor = TrOCRProcessor.from_pretrained(EXTRACT_MODEL, trust_remote_code=True)
         self.traslate_model = VisionEncoderDecoderModel.from_pretrained(EXTRACT_MODEL, trust_remote_code=True)
         # Move model to GPU if available
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cpu')
         self.bubble_model.to(self.device)
         self.translator = deepl.Translator(os.getenv('DEEPL_API_KEY'))
         
@@ -79,13 +79,9 @@ class MangaTranslator:
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         # Inference with mixed precision if available
-        if hasattr(torch.cuda, 'amp') and self.device.type == 'cuda':
-            with torch.cuda.amp.autocast():
-                with torch.inference_mode():
-                    outputs = self.bubble_model(**inputs)
-        else:
-            with torch.inference_mode():
-                outputs = self.bubble_model(**inputs)
+     
+        with torch.inference_mode():
+            outputs = self.bubble_model(**inputs)
 
         # Process results
         target_sizes = torch.tensor([image.size[::-1]]).to(self.device)  # (height, width)
