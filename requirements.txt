@@ -12,3 +12,4 @@ logging
 fastapi
 dotenv
 python-multipart
+protobuf

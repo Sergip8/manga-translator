@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw, ImageFont
 import deepl
 
 BUBBLE_MODEL = "ogkalu/comic-text-and-bubble-detector"
-EXTRACT_MODEL = "kha-white/manga-ocr-base"
+EXTRACT_MODEL = "jzhang533/manga-ocr-base-2025"
 
 class MangaTranslator:
     def __init__(self):
